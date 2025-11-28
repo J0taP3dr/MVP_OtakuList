@@ -109,3 +109,44 @@ function displayStats() {
     document.getElementById('stat-completed').textContent = list.filter(item => item.status === 'completed').length;
     document.getElementById('stat-dropped').textContent = list.filter(item => item.status === 'dropped').length;
 }
+
+async function addToList(id, title, image) {
+    const response = await fetch("/api/add_to_list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, title, image })
+    });
+
+    const result = await response.json();
+    alert(result.message);
+}
+
+async function displayList() {
+    const response = await fetch("/api/get_list");
+    const list = await response.json();
+
+    const container = document.getElementById("anime-list");
+    container.innerHTML = "";
+
+    list.forEach(anime => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+            <img src="${anime.image}" width="150">
+            <h3>${anime.title}</h3>
+            <button onclick="removeFromList(${anime.id})">Remover</button>
+        `;
+        container.appendChild(div);
+    });
+}
+
+async function removeFromList(id) {
+    const response = await fetch("/api/remove_from_list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+    });
+
+    const result = await response.json();
+    alert(result.message);
+    displayList();
+}
