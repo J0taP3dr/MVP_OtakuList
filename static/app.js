@@ -150,3 +150,28 @@ async function removeFromList(id) {
     alert(result.message);
     displayList();
 }
+
+// Garante que existe uma lista salva no localStorage
+function getUserList() {
+    let list = localStorage.getItem("userList");
+    return list ? JSON.parse(list) : [];
+}
+
+// Salva a lista atualizada
+function saveUserList(list) {
+    localStorage.setItem("userList", JSON.stringify(list));
+}
+
+// Adiciona um anime à lista
+function addToList(anime) {
+    let list = getUserList();
+
+    // Evita duplicados
+    if (!list.some(item => item.id === anime.id)) {
+        list.push(anime);
+        saveUserList(list);
+        alert("Anime adicionado à sua lista!");
+    } else {
+        alert("Este anime já está na sua lista.");
+    }
+}
