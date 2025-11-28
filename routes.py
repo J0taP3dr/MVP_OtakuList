@@ -32,3 +32,39 @@ def my_list():
 def profile():
     return render_template('perfil.html')
 
+from flask import request, jsonify
+
+user_list = []
+
+@app.route("/api/add_to_list", methods=["POST"])
+def add_to_list():
+    data = request.json
+    anime_id = data.get("id")
+    anime_title = data.get("title")
+    anime_image = data.get("image")
+
+    for item in user_list:
+        if item["id"] == anime_id:
+            return jsonify({"message": "Anime já está na lista"}), 200
+
+    user_list.append({
+        "id": anime_id,
+        "title": anime_title,
+        "image": anime_image
+    })
+
+    return jsonify({"message": "Adicionado com sucesso"}), 200
+
+
+@app.route("/api/get_list", methods=["GET"])
+def get_list():
+    return jsonify(user_list)
+
+
+@app.route("/api/remove_from_list", methods=["POST"])
+def remove_from_list():
+    data = request.json
+    anime_id = data.get("id")
+    global user_list
+    user_list = [item for item in user_list if item["id"] != anime_id]
+    return jsonify({"message": "Removido com sucesso"})
