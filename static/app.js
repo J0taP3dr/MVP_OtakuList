@@ -58,8 +58,8 @@ let viewMode = "playlists";
 
 function filterList(filter) {
     currentFilter = filter;
-    viewMode = "list"; 
     displayList();
+    displayListsInPage();
 }
 
 // Rótulos
@@ -73,25 +73,38 @@ function getStatusLabel(status) {
 }
 
 // EXIBIR A LISTA PRINCIPAL
+
 function displayList() {
     const container = document.getElementById("anime-list");
     if (!container) return;
 
-    if (viewMode !== "list") return; 
-
     let list = getUserList();
+
+    container.innerHTML = ""; // limpa a tela SEM apagar playlists
+
+    // --- PRIMEIRO: mostrar PLAYLISTS sempre ---
+    const playlistsContainer = document.createElement("div");
+    playlistsContainer.id = "playlists-section";
+    container.appendChild(playlistsContainer);
+
+    displayListsInPage(); // garante que playlists aparecem SEMPRE
+
+    // --- SEGUNDO: mostrar os ANIMES filtrados ---
+
+    const animesContainer = document.createElement("div");
+    animesContainer.id = "animes-section";
+    container.appendChild(animesContainer);
 
     if (currentFilter !== "all") {
         list = list.filter(item => item.status === currentFilter);
     }
 
     if (list.length === 0) {
-        container.innerHTML = "<p>Nenhum anime nesta categoria.</p>";
+        animesContainer.innerHTML = "<p>Nenhum anime nesta categoria.</p>";
         return;
     }
 
-    container.innerHTML = `
-        <button onclick="switchToPlaylists()">Voltar às playlists</button>
+    animesContainer.innerHTML = `
         <ul>
             ${list
                 .map(
@@ -99,10 +112,6 @@ function displayList() {
                 <li>
                     <img src="${item.coverImage}" width="150">
                     <h3>${item.title}</h3>
-
-                    <button onclick="openPlaylistSelector(${item.id}, '${item.title}', '${item.coverImage}')">
-                        Adicionar a playlist
-                    </button>
 
                     <p>Status: ${getStatusLabel(item.status)}</p>
                     <select onchange="updateStatus(${item.id}, this.value)">
