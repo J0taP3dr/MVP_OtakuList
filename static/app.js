@@ -1,5 +1,4 @@
 // Função chamada pelos botões "Adicionar"
-
 function addToListFromButton(button) {
     const id = parseInt(button.getAttribute("data-id"));
     const title = button.getAttribute("data-title");
@@ -8,8 +7,7 @@ function addToListFromButton(button) {
     addToList({ id, title, coverImage });
 }
 
-// LocalStorage – Ler e Salvar Lista
-
+// LocalStorage – Ler e Salvar Lista Principal
 function getUserList() {
     const list = localStorage.getItem("userList");
     return list ? JSON.parse(list) : [];
@@ -19,13 +17,12 @@ function saveUserList(list) {
     localStorage.setItem("userList", JSON.stringify(list));
 }
 
-// Adicionar anime à lista
-
+// Adicionar anime à lista principal
 function addToList(anime) {
     let list = getUserList();
 
     if (!list.some(item => item.id === anime.id)) {
-        anime.status = "watching";   // padrão
+        anime.status = "watching";
         list.push(anime);
         saveUserList(list);
         alert("Anime adicionado à sua lista!");
@@ -35,13 +32,10 @@ function addToList(anime) {
 }
 
 // Atualizar status
-
 function updateStatus(id, status) {
     let list = getUserList();
     list = list.map(item => {
-        if (item.id === id) {
-            item.status = status;
-        }
+        if (item.id === id) item.status = status;
         return item;
     });
     saveUserList(list);
@@ -49,7 +43,6 @@ function updateStatus(id, status) {
 }
 
 // Remover anime
-
 function removeFromList(id) {
     let list = getUserList();
     list = list.filter(item => item.id !== id);
@@ -60,13 +53,16 @@ function removeFromList(id) {
 // FILTRO
 let currentFilter = "all";
 
+// CONTROLE DE MODO DE EXIBIÇÃO 
+let viewMode = "playlists"; 
+
 function filterList(filter) {
     currentFilter = filter;
+    viewMode = "list"; 
     displayList();
 }
 
-// Função auxiliar de rótulos
-
+// Rótulos
 function getStatusLabel(status) {
     const labels = {
         watching: "Assistindo",
@@ -76,11 +72,12 @@ function getStatusLabel(status) {
     return labels[status] || status;
 }
 
-// Exibir lista na página minha-lista.html
-
+// EXIBIR A LISTA PRINCIPAL
 function displayList() {
     const container = document.getElementById("anime-list");
-    if (!container) return; // se não estiver nesta página, ignore
+    if (!container) return;
+
+    if (viewMode !== "list") return; 
 
     let list = getUserList();
 
@@ -94,6 +91,7 @@ function displayList() {
     }
 
     container.innerHTML = `
+        <button onclick="switchToPlaylists()">Voltar às playlists</button>
         <ul>
             ${list
                 .map(
@@ -101,6 +99,10 @@ function displayList() {
                 <li>
                     <img src="${item.coverImage}" width="150">
                     <h3>${item.title}</h3>
+
+                    <button onclick="openPlaylistSelector(${item.id}, '${item.title}', '${item.coverImage}')">
+                        Adicionar a playlist
+                    </button>
 
                     <p>Status: ${getStatusLabel(item.status)}</p>
                     <select onchange="updateStatus(${item.id}, this.value)">
@@ -118,20 +120,18 @@ function displayList() {
     `;
 }
 
-//   SISTEMA DE LISTAS (PLAYLISTS)
+//   SISTEMA DE LISTAS
 
-// Obtém todas as listas criadas
 function getUserLists() {
     const lists = localStorage.getItem("animePlaylists");
     return lists ? JSON.parse(lists) : [];
 }
 
-// Salva todas as listas
 function saveUserLists(lists) {
     localStorage.setItem("animePlaylists", JSON.stringify(lists));
 }
 
-// Cria nova lista
+// Criar nova playlist
 function createNewList() {
     const name = prompt("Digite o nome da nova lista:");
 
@@ -142,7 +142,6 @@ function createNewList() {
 
     const lists = getUserLists();
 
-    // Evita nomes repetidos
     if (lists.some(list => list.name === name)) {
         alert("Já existe uma lista com esse nome.");
         return;
@@ -150,15 +149,16 @@ function createNewList() {
 
     lists.push({
         name: name,
-        animes: [] // cada lista guarda seus animes
+        animes: []
     });
 
     saveUserLists(lists);
     alert("Lista criada com sucesso!");
+    viewMode = "playlists";
     displayListsInPage();
 }
 
-// Adiciona um anime na lista selecionada
+// ADICIONAR ANIME A UMA PLAYLIST
 function addAnimeToSpecificList(id, title, image, listName) {
     let lists = getUserLists();
     let list = lists.find(l => l.name === listName);
@@ -178,10 +178,12 @@ function addAnimeToSpecificList(id, title, image, listName) {
     alert(`Anime adicionado à lista "${listName}"!`);
 }
 
-// Renderiza as listas na página “Minha Lista”
+// MOSTRA AS PLAYLISTS NA TELA
 function displayListsInPage() {
     const container = document.getElementById("anime-list");
     if (!container) return;
+
+    viewMode = "playlists";
 
     const lists = getUserLists();
 
@@ -205,7 +207,7 @@ function displayListsInPage() {
     });
 }
 
-// Mostra os animes dentro de uma lista
+// MOSTRA CONTEÚDO DE UMA LISTA
 function showListContent(listName) {
     const lists = getUserLists();
     const list = lists.find(l => l.name === listName);
@@ -213,6 +215,8 @@ function showListContent(listName) {
     if (!list) return;
 
     const container = document.getElementById("anime-list");
+    viewMode = "playlists";
+
     container.innerHTML = `
         <h2>${listName}</h2>
         <button onclick="displayListsInPage()">Voltar</button>
@@ -235,7 +239,7 @@ function showListContent(listName) {
     });
 }
 
-// Remove anime de uma lista específica
+// Remover anime de playlist
 function removeAnimeFromList(listName, id) {
     let lists = getUserLists();
     let list = lists.find(l => l.name === listName);
@@ -244,4 +248,29 @@ function removeAnimeFromList(listName, id) {
     saveUserLists(lists);
 
     showListContent(listName);
+}
+
+// BOTÃO “VOLTAR”
+function switchToPlaylists() {
+    viewMode = "playlists";
+    displayListsInPage();
+}
+
+// Selecionar playlist para adicionar anime
+function openPlaylistSelector(id, title, image) {
+    const lists = getUserLists();
+
+    if (lists.length === 0) {
+        alert("Nenhuma playlist criada!");
+        return;
+    }
+
+    const listName = prompt(
+        "Digite o nome da playlist para adicionar:\n" +
+        lists.map(l => "- " + l.name).join("\n")
+    );
+
+    if (!listName) return;
+
+    addAnimeToSpecificList(id, title, image, listName);
 }
