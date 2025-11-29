@@ -118,9 +118,7 @@ function displayList() {
     `;
 }
 
-// ------------------------------
 //   SISTEMA DE LISTAS (PLAYLISTS)
-// ------------------------------
 
 // Obtém todas as listas criadas
 function getUserLists() {
