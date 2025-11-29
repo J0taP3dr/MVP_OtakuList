@@ -117,3 +117,133 @@ function displayList() {
         </ul>
     `;
 }
+
+// ------------------------------
+//   SISTEMA DE LISTAS (PLAYLISTS)
+// ------------------------------
+
+// Obtém todas as listas criadas
+function getUserLists() {
+    const lists = localStorage.getItem("animePlaylists");
+    return lists ? JSON.parse(lists) : [];
+}
+
+// Salva todas as listas
+function saveUserLists(lists) {
+    localStorage.setItem("animePlaylists", JSON.stringify(lists));
+}
+
+// Cria nova lista
+function createNewList() {
+    const name = prompt("Digite o nome da nova lista:");
+
+    if (!name || name.trim() === "") {
+        alert("O nome da lista não pode ser vazio.");
+        return;
+    }
+
+    const lists = getUserLists();
+
+    // Evita nomes repetidos
+    if (lists.some(list => list.name === name)) {
+        alert("Já existe uma lista com esse nome.");
+        return;
+    }
+
+    lists.push({
+        name: name,
+        animes: [] // cada lista guarda seus animes
+    });
+
+    saveUserLists(lists);
+    alert("Lista criada com sucesso!");
+    displayListsInPage();
+}
+
+// Adiciona um anime na lista selecionada
+function addAnimeToSpecificList(id, title, image, listName) {
+    let lists = getUserLists();
+    let list = lists.find(l => l.name === listName);
+
+    if (!list) {
+        alert("Erro: lista não encontrada.");
+        return;
+    }
+
+    if (list.animes.some(a => a.id === id)) {
+        alert("Este anime já está nessa lista.");
+        return;
+    }
+
+    list.animes.push({ id, title, image });
+    saveUserLists(lists);
+    alert(`Anime adicionado à lista "${listName}"!`);
+}
+
+// Renderiza as listas na página “Minha Lista”
+function displayListsInPage() {
+    const container = document.getElementById("anime-list");
+    if (!container) return;
+
+    const lists = getUserLists();
+
+    if (lists.length === 0) {
+        container.innerHTML = `<p>Nenhuma lista criada ainda.</p>`;
+        return;
+    }
+
+    container.innerHTML = "";
+
+    lists.forEach(list => {
+        const div = document.createElement("div");
+        div.className = "playlist-box";
+
+        div.innerHTML = `
+            <h2>${list.name}</h2>
+            <button onclick="showListContent('${list.name}')">Ver animes</button>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+// Mostra os animes dentro de uma lista
+function showListContent(listName) {
+    const lists = getUserLists();
+    const list = lists.find(l => l.name === listName);
+
+    if (!list) return;
+
+    const container = document.getElementById("anime-list");
+    container.innerHTML = `
+        <h2>${listName}</h2>
+        <button onclick="displayListsInPage()">Voltar</button>
+        <br><br>
+    `;
+
+    if (list.animes.length === 0) {
+        container.innerHTML += "<p>Nenhum anime nesta lista.</p>";
+        return;
+    }
+
+    list.animes.forEach(anime => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+            <img src="${anime.image}" width="120">
+            <h3>${anime.title}</h3>
+            <button onclick="removeAnimeFromList('${listName}', ${anime.id})">Remover</button>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// Remove anime de uma lista específica
+function removeAnimeFromList(listName, id) {
+    let lists = getUserLists();
+    let list = lists.find(l => l.name === listName);
+
+    list.animes = list.animes.filter(a => a.id !== id);
+    saveUserLists(lists);
+
+    showListContent(listName);
+}
