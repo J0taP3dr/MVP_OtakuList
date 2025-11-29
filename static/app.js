@@ -1,5 +1,4 @@
-// Função chamada pelos botões "Adicionar"
-
+//  SISTEMA DE MINHA LISTA ORIGINAL
 function addToListFromButton(button) {
     const id = parseInt(button.getAttribute("data-id"));
     const title = button.getAttribute("data-title");
@@ -7,10 +6,6 @@ function addToListFromButton(button) {
 
     addToList({ id, title, coverImage });
 }
-
-// SISTEMA DE LISTA PRINCIPAL (ANIMES)
-
-// LocalStorage – Ler e Salvar Lista
 
 function getUserList() {
     const list = localStorage.getItem("userList");
@@ -21,23 +16,20 @@ function saveUserList(list) {
     localStorage.setItem("userList", JSON.stringify(list));
 }
 
-// Adicionar anime à lista principal
-
 function addToList(anime) {
     let list = getUserList();
 
     if (!list.some(item => item.id === anime.id)) {
-        anime.status = "watching"; 
+        anime.status = "watching";
         list.push(anime);
         saveUserList(list);
         alert("Anime adicionado à sua lista!");
-        displayList();  
     } else {
         alert("Este anime já está na sua lista.");
     }
-}
 
-// Atualizar status
+    displayList();
+}
 
 function updateStatus(id, status) {
     let list = getUserList();
@@ -51,8 +43,6 @@ function updateStatus(id, status) {
     displayList();
 }
 
-// Remover anime
-
 function removeFromList(id) {
     let list = getUserList();
     list = list.filter(item => item.id !== id);
@@ -60,30 +50,30 @@ function removeFromList(id) {
     displayList();
 }
 
-// FILTRO
-
 let currentFilter = "all";
 function filterList(filter) {
     currentFilter = filter;
     displayList();
 }
 
+function getStatusLabel(status) {
+    const labels = {
+        watching: "Assistindo",
+        completed: "Assistido",
+        dropped: "Dropado"
+    };
+    return labels[status] || status;
+}
+
 // SISTEMA DE PLAYLISTS
-
-// Obtém todas as playlists criadas
-
 function getUserLists() {
     const lists = localStorage.getItem("animePlaylists");
     return lists ? JSON.parse(lists) : [];
 }
 
-// Salva as playlists
-
 function saveUserLists(lists) {
     localStorage.setItem("animePlaylists", JSON.stringify(lists));
 }
-
-// Criar playlist
 
 function createNewList() {
     const name = prompt("Digite o nome da nova lista:");
@@ -100,27 +90,28 @@ function createNewList() {
         return;
     }
 
-    lists.push({
-        name: name,
-        animes: []
-    });
-
+    lists.push({ name: name, animes: [] });
     saveUserLists(lists);
+
     alert("Lista criada com sucesso!");
-    displayList();  
+    displayList();
 }
 
+function deletePlaylist(name) {
+    if (!confirm(`Tem certeza que deseja excluir a lista "${name}"?`)) return;
 
-// Adiciona anime em playlist específica
+    let lists = getUserLists();
+    lists = lists.filter(l => l.name !== name);
+    saveUserLists(lists);
+
+    displayList();
+}
 
 function addAnimeToSpecificList(id, title, image, listName) {
     let lists = getUserLists();
     let list = lists.find(l => l.name === listName);
 
-    if (!list) {
-        alert("Erro: lista não encontrada.");
-        return;
-    }
+    if (!list) return;
 
     if (list.animes.some(a => a.id === id)) {
         alert("Este anime já está nessa lista.");
@@ -129,96 +120,34 @@ function addAnimeToSpecificList(id, title, image, listName) {
 
     list.animes.push({ id, title, image });
     saveUserLists(lists);
+
     alert(`Anime adicionado à lista "${listName}"!`);
 }
 
-// EXIBIÇÃO FINAL — ANIMES E PLAYLISTS NA MESMA PÁGINA
+function removeAnimeFromList(listName, id) {
+    let lists = getUserLists();
+    let list = lists.find(l => l.name === listName);
 
-function displayList() {
-    const container = document.getElementById("anime-list");
-    if (!container) return;
+    list.animes = list.animes.filter(a => a.id !== id);
+    saveUserLists(lists);
 
-    container.innerHTML = ""; 
-
-    // EXIBIR AS PLAYLISTS SEMPRE (PRIMEIRO)
-    
-    const lists = getUserLists();
-
-    const playlistsDiv = document.createElement("div");
-    playlistsDiv.innerHTML = `<h2>Suas Playlists</h2>`;
-
-    if (lists.length === 0) {
-        playlistsDiv.innerHTML += `<p>Nenhuma playlist criada ainda.</p>`;
-    } else {
-        lists.forEach(list => {
-            const div = document.createElement("div");
-            div.className = "playlist-box";
-
-            div.innerHTML = `
-                <h3>${list.name}</h3>
-                <button onclick="showListContent('${list.name}')">Ver animes</button>
-            `;
-
-            playlistsDiv.appendChild(div);
-        });
-    }
-
-    container.appendChild(playlistsDiv);
-
-    // EXIBE A LISTA PRINCIPAL DE ANIMES
-
-    let list = getUserList();
-
-    if (currentFilter !== "all") {
-        list = list.filter(item => item.status === currentFilter);
-    }
-
-    const animesDiv = document.createElement("div");
-    animesDiv.innerHTML = `<h2>Animes da sua Lista</h2>`;
-
-    if (list.length === 0) {
-        animesDiv.innerHTML += "<p>Nenhum anime nesta categoria.</p>";
-        container.appendChild(animesDiv);
-        return;
-    }
-
-    list.forEach(item => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-            <img src="${item.coverImage}" width="150">
-            <h3>${item.title}</h3>
-
-            <p>Status: ${item.status}</p>
-            <select onchange="updateStatus(${item.id}, this.value)">
-                <option value="watching" ${item.status === "watching" ? "selected" : ""}>Assistindo</option>
-                <option value="completed" ${item.status === "completed" ? "selected" : ""}>Assistido</option>
-                <option value="dropped" ${item.status === "dropped" ? "selected" : ""}>Dropado</option>
-            </select>
-
-            <button onclick="removeFromList(${item.id})">Remover</button>
-        `;
-
-        animesDiv.appendChild(div);
-    });
-
-    container.appendChild(animesDiv);
+    showListContent(listName);
 }
-
-// VER CONTEÚDO DE UMA PLAYLIST
 
 function showListContent(listName) {
     const lists = getUserLists();
     const list = lists.find(l => l.name === listName);
-
     const container = document.getElementById("anime-list");
+
     container.innerHTML = `
         <h2>${listName}</h2>
         <button onclick="displayList()">Voltar</button>
+        <button onclick="deletePlaylist('${listName}')">Apagar Lista</button>
         <br><br>
     `;
 
-    if (!list || list.animes.length === 0) {
-        container.innerHTML += "<p>Nenhum anime nesta playlist.</p>";
+    if (list.animes.length === 0) {
+        container.innerHTML += "<p>Nenhum anime nesta lista.</p>";
         return;
     }
 
@@ -233,14 +162,78 @@ function showListContent(listName) {
     });
 }
 
+// EXIBIR TUDO JUNTO (ANIMES + PLAYLISTS)
+function displayPlaylistsSection() {
+    const lists = getUserLists();
 
-// Remover anime de playlist
-function removeAnimeFromList(listName, id) {
-    let lists = getUserLists();
-    let list = lists.find(l => l.name === listName);
+    let html = `<h2>Playlists</h2>`;
 
-    list.animes = list.animes.filter(a => a.id !== id);
-    saveUserLists(lists);
+    if (lists.length === 0) {
+        html += "<p>Nenhuma playlist criada.</p>";
+        return html;
+    }
 
-    showListContent(listName);
+    lists.forEach(list => {
+        html += `
+            <div class="playlist-box">
+                <h3>${list.name}</h3>
+                <button onclick="showListContent('${list.name}')">Ver</button>
+                <button onclick="deletePlaylist('${list.name}')">Apagar</button>
+            </div>
+        `;
+    });
+
+    return html;
+}
+
+// EXIBIR ANIMES + PLAYLISTS
+function displayList() {
+    const container = document.getElementById("anime-list");
+    if (!container) return;
+
+    let html = "";
+
+    // EXIBIR PLAYLISTS SEMPRE
+    html += displayPlaylistsSection();
+    html += "<hr>";
+
+    // EXIBIR OS ANIMES DE MINHA LISTA
+    let list = getUserList();
+
+    if (currentFilter !== "all") {
+        list = list.filter(item => item.status === currentFilter);
+    }
+
+    if (list.length === 0) {
+        html += "<p>Nenhum anime nesta categoria.</p>";
+        container.innerHTML = html;
+        return;
+    }
+
+    html += `<ul>`;
+    list.forEach(item => {
+        html += `
+            <li>
+                <img src="${item.coverImage}" width="150">
+                <h3>${item.title}</h3>
+
+                <p>Status: ${getStatusLabel(item.status)}</p>
+                <select onchange="updateStatus(${item.id}, this.value)">
+                    <option value="watching" ${item.status === "watching" ? "selected" : ""}>Assistindo</option>
+                    <option value="completed" ${item.status === "completed" ? "selected" : ""}>Assistido</option>
+                    <option value="dropped" ${item.status === "dropped" ? "selected" : ""}>Dropado</option>
+                </select>
+
+                <button onclick="removeFromList(${item.id})">Remover</button>
+
+                <select onchange="addAnimeToSpecificList(${item.id}, '${item.title}', '${item.coverImage}', this.value)">
+                    <option value="">Adicionar à playlist...</option>
+                    ${getUserLists().map(l => `<option value="${l.name}">${l.name}</option>`).join("")}
+                </select>
+            </li>
+        `;
+    });
+    html += `</ul>`;
+
+    container.innerHTML = html;
 }
